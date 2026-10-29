@@ -10,7 +10,8 @@ enum AppSection {
 struct RootView: View {
     @EnvironmentObject private var store: AppStore
     @State private var section: AppSection = .bills
-    @State private var entryDate = DateKey.startOfDay(Date())
+    @State private var entryDate: Date? = DateKey.startOfDay(Date())
+    @State private var entryIsBackfill = false
     @State private var entryReloadID = UUID()
 
     var body: some View {
@@ -19,12 +20,13 @@ struct RootView: View {
             case .bills:
                 HomeView(
                     onNewEntry: openTodayEntry,
+                    onBackfill: openBackfillEntry,
                     onOpenDate: openEntry,
                     onOpenSettings: { section = .directory },
                     onOpenReports: { section = .query }
                 )
             case .entry:
-                EntryView(initialDate: entryDate) {
+                EntryView(initialDate: entryDate, isBackfill: entryIsBackfill) {
                     store.reloadAll()
                     section = .bills
                 }
@@ -46,12 +48,21 @@ struct RootView: View {
 
     private func openTodayEntry() {
         entryDate = DateKey.startOfDay(Date())
+        entryIsBackfill = false
+        entryReloadID = UUID()
+        section = .entry
+    }
+
+    private func openBackfillEntry() {
+        entryDate = nil
+        entryIsBackfill = true
         entryReloadID = UUID()
         section = .entry
     }
 
     private func openEntry(_ date: Date) {
         entryDate = DateKey.startOfDay(date)
+        entryIsBackfill = false
         entryReloadID = UUID()
         section = .entry
     }

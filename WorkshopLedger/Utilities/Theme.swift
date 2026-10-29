@@ -109,15 +109,7 @@ struct WorkshopShell<Content: View>: View {
                 content
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .background(AppTheme.surface)
-            .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
-            .overlay(
-                RoundedRectangle(cornerRadius: 22, style: .continuous)
-                    .stroke(Color.white.opacity(0.82), lineWidth: 1)
-            )
-            .shadow(color: AppTheme.navy.opacity(0.10), radius: 25, x: 0, y: 14)
-            .padding(.horizontal, 18)
-            .padding(.vertical, 18)
+            .background(AppTheme.surface.ignoresSafeArea())
         }
     }
 }

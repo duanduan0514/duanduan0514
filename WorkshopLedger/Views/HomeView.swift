@@ -4,6 +4,7 @@ struct HomeView: View {
     @EnvironmentObject private var store: AppStore
 
     let onNewEntry: () -> Void
+    let onBackfill: () -> Void
     let onOpenDate: (Date) -> Void
     let onOpenSettings: () -> Void
     let onOpenReports: () -> Void
@@ -41,22 +42,32 @@ struct HomeView: View {
                         title: "全部账单",
                         note: "按日期倒序查看每一天的计件记录"
                     ) {
-                        HStack(spacing: 4) {
-                            Text("共")
-                                .font(.system(size: 13))
-                                .foregroundColor(AppTheme.textMuted)
-                            Text("\(days.count)")
-                                .font(.system(size: 15, weight: .bold))
-                                .foregroundColor(AppTheme.text)
-                            Text("个账单日")
-                                .font(.system(size: 13))
-                                .foregroundColor(AppTheme.textMuted)
+                        HStack(spacing: 10) {
+                            Button(action: onBackfill) {
+                                HStack(spacing: 7) {
+                                    Image(systemName: "calendar.badge.plus")
+                                    Text("补录")
+                                }
+                            }
+                            .buttonStyle(SecondaryButtonStyle())
+
+                            HStack(spacing: 4) {
+                                Text("共")
+                                    .font(.system(size: 13))
+                                    .foregroundColor(AppTheme.textMuted)
+                                Text("\(days.count)")
+                                    .font(.system(size: 15, weight: .bold))
+                                    .foregroundColor(AppTheme.text)
+                                Text("个账单日")
+                                    .font(.system(size: 13))
+                                    .foregroundColor(AppTheme.textMuted)
+                            }
+                            .padding(.horizontal, 13)
+                            .frame(height: 34)
+                            .background(AppTheme.surfaceSoft)
+                            .clipShape(Capsule())
+                            .overlay(Capsule().stroke(AppTheme.line, lineWidth: 1))
                         }
-                        .padding(.horizontal, 13)
-                        .frame(height: 34)
-                        .background(AppTheme.surfaceSoft)
-                        .clipShape(Capsule())
-                        .overlay(Capsule().stroke(AppTheme.line, lineWidth: 1))
                     }
                     .padding(.horizontal, 0)
 

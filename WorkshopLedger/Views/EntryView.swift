@@ -5,8 +5,10 @@ struct EntryView: View {
     @Environment(\.scenePhase) private var scenePhase
 
     let onClose: () -> Void
+    private let isBackfill: Bool
 
     @State private var billDate: Date
+    @State private var hasSelectedDate: Bool
     @State private var rows: [EntryRow] = [EntryRow.empty()]
     @State private var source: EntrySource = .new
     @State private var originalDraftDate: Date?
@@ -18,9 +20,11 @@ struct EntryView: View {
     @State private var autoSaveWorkItem: DispatchWorkItem?
     @State private var showDatePicker = false
 
-    init(initialDate: Date, onClose: @escaping () -> Void) {
-        let normalizedDate = DateKey.startOfDay(initialDate)
+    init(initialDate: Date?, isBackfill: Bool = false, onClose: @escaping () -> Void) {
+        let normalizedDate = DateKey.startOfDay(initialDate ?? Date())
         _billDate = State(initialValue: normalizedDate)
+        _hasSelectedDate = State(initialValue: initialDate != nil)
+        self.isBackfill = isBackfill
         self.onClose = onClose
     }
 
@@ -39,7 +43,7 @@ struct EntryView: View {
                 ScrollView {
                     VStack(spacing: 0) {
                         heading
-                        if hasChanges || source == .draft {
+                        if hasSelectedDate && (hasChanges || source == .draft) {
                             draftNotice
                                 .padding(.bottom, 18)
                         }
@@ -70,7 +74,8 @@ struct EntryView: View {
         .sheet(isPresented: $showDatePicker) {
             BillDatePickerSheet(
                 date: $billDate,
-                maximumDate: DateKey.startOfDay(Date())
+                maximumDate: DateKey.startOfDay(Date()),
+                onComplete: { hasSelectedDate = true }
             )
         }
         .alert(item: $activeAlert) { item in
@@ -91,19 +96,17 @@ struct EntryView: View {
                 )
             case .error(let message):
                 return Alert(title: Text("无法完成操作"), message: Text(message), dismissButton: .default(Text("知道了")))
-            case .submitted:
-                return Alert(title: Text("提交成功"), message: Text("账单已保存到本机 SQLite。"), dismissButton: .default(Text("返回账单")) {
-                    finishAndClose()
-                })
             }
         }
     }
 
     private var heading: some View {
         PageHeading(
-            eyebrow: "当日账单",
-            title: DateKey.display(billDate),
-            note: "\(weekday(billDate)) · 默认今天，点击账单日期可手动更改用于补记"
+            eyebrow: isBackfill || !hasSelectedDate ? "补录账单" : "当日账单",
+            title: hasSelectedDate ? DateKey.display(billDate) : "请选择账单日期",
+            note: hasSelectedDate
+                ? "\(weekday(billDate)) · 点击账单日期可手动更改用于补记"
+                : "点击账单日期选择要补录的历史日期，选好后再填写记录"
         ) {
             Button {
                 showDatePicker = true
@@ -114,13 +117,13 @@ struct EntryView: View {
                             .font(.system(size: 11, weight: .bold))
                             .foregroundColor(AppTheme.textFaint)
                         Spacer(minLength: 8)
-                        Text("点击可更改")
+                        Text(hasSelectedDate ? "点击可更改" : "点击选择")
                             .font(.system(size: 11, weight: .semibold))
                             .foregroundColor(AppTheme.accentDark)
                     }
-                    Text("\(DateKey.display(billDate)) · \(weekday(billDate))")
+                    Text(hasSelectedDate ? "\(DateKey.display(billDate)) · \(weekday(billDate))" : "请选择日期")
                         .font(.system(size: 16, weight: .bold))
-                        .foregroundColor(AppTheme.text)
+                        .foregroundColor(hasSelectedDate ? AppTheme.text : AppTheme.textMuted)
                 }
                 .padding(.horizontal, 16)
                 .frame(minWidth: 230, minHeight: 60, alignment: .leading)
@@ -174,15 +177,6 @@ struct EntryView: View {
                         .foregroundColor(AppTheme.textMuted)
                         .lineSpacing(2)
                 }
-                Spacer(minLength: 16)
-                Button(action: addRow) {
-                    HStack(spacing: 7) {
-                        Image(systemName: "plus")
-                            .font(.system(size: 13, weight: .bold))
-                        Text("增加一行")
-                    }
-                }
-                .buttonStyle(SecondaryButtonStyle())
             }
             .padding(.horizontal, 22)
             .padding(.vertical, 18)
@@ -216,6 +210,18 @@ struct EntryView: View {
             .frame(height: 42)
             .background(AppTheme.surfaceSoft)
             .overlay(Rectangle().fill(AppTheme.line).frame(height: 1), alignment: .top)
+
+            Button(action: addRow) {
+                HStack(spacing: 7) {
+                    Image(systemName: "plus")
+                        .font(.system(size: 13, weight: .bold))
+                    Text("增加一行")
+                }
+            }
+            .buttonStyle(SecondaryButtonStyle())
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 14)
+            .background(Color.white)
         }
         .background(Color.white)
         .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
@@ -363,7 +369,9 @@ struct EntryView: View {
         .labelsHidden()
         .pickerStyle(MenuPickerStyle())
         .font(.system(size: 14, weight: .medium))
+        .frame(maxWidth: .infinity, alignment: .leading)
         .frame(height: 44)
+        .contentShape(Rectangle())
         .background(Color.white)
         .overlay(cellBorder)
         .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
@@ -381,7 +389,9 @@ struct EntryView: View {
         .labelsHidden()
         .pickerStyle(MenuPickerStyle())
         .font(.system(size: 14, weight: .medium))
+        .frame(maxWidth: .infinity, alignment: .leading)
         .frame(height: 44)
+        .contentShape(Rectangle())
         .background(Color.white)
         .overlay(cellBorder)
         .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
@@ -408,15 +418,20 @@ struct EntryView: View {
 
     private var columnWidths: EntryColumnWidths {
         let total = max(720, tableWidth - 20)
+        let customerColumn = floor(total * 0.20)
+        let employeeColumn = floor(total * 0.18)
         let quantityWidth: CGFloat = 92
         let colorWidth: CGFloat = 64
         let deleteWidth: CGFloat = 40
         let colorGroupWidth = colorWidth + 8 + deleteWidth
-        let flexible = max(430, total - quantityWidth - colorGroupWidth - columnSpacing * 4)
+        let modelColumn = max(
+            220,
+            total - customerColumn - employeeColumn - quantityWidth - colorGroupWidth - columnSpacing * 4
+        )
         return EntryColumnWidths(
-            customer: floor(flexible * 0.25),
-            employee: floor(flexible * 0.21),
-            model: floor(flexible * 0.54),
+            customer: customerColumn,
+            employee: employeeColumn,
+            model: modelColumn,
             quantity: quantityWidth,
             color: colorWidth,
             deleteAction: deleteWidth,
@@ -431,10 +446,10 @@ struct EntryView: View {
             copy.employee = copy.employee.trimmingCharacters(in: .whitespacesAndNewlines)
             copy.model = copy.model.trimmingCharacters(in: .whitespacesAndNewlines)
             copy.quantity = copy.quantity.trimmingCharacters(in: .whitespacesAndNewlines)
-            copy.colorCount = min(5, max(1, copy.colorCount))
+            copy.colorCount = Swift.min(5, Swift.max(1, copy.colorCount))
             return copy
         }
-        .filter { !$0.model.isEmpty || !$0.quantity.isEmpty }
+        .filter { !$0.isCompletelyEmpty }
     }
 
     private var currentSignature: EntrySignature {
@@ -446,10 +461,11 @@ struct EntryView: View {
     }
 
     private var canDiscard: Bool {
-        source == .draft || store.draft(on: billDate) != nil || hasChanges
+        hasSelectedDate && (source == .draft || store.draft(on: billDate) != nil || hasChanges)
     }
 
     private var saveStateText: String {
+        if !hasSelectedDate { return "请先选择账单日期" }
         if hasChanges { return "正在等待自动保存…" }
         if source == .draft { return "草稿已保存到本机" }
         if source == .bill { return "正式账单；只有实际修改后才会生成草稿" }
@@ -462,6 +478,14 @@ struct EntryView: View {
 
     private func loadInitialData() {
         guard !didLoad else { return }
+        if !hasSelectedDate {
+            rows = [EntryRow.empty()]
+            source = .new
+            originalDraftDate = nil
+            baselineSignature = EntrySignature(date: billDate, rows: [])
+            didLoad = true
+            return
+        }
         let loaded = store.loadRows(for: billDate)
         rows = loaded.rows.isEmpty
             ? [EntryRow.empty(customer: store.allCustomerNames.first ?? "", employee: store.allEmployeeNames.first ?? "")]
@@ -509,7 +533,7 @@ struct EntryView: View {
     }
 
     private func saveDraftIfNeeded() {
-        guard didLoad, !didFinish else { return }
+        guard didLoad, !didFinish, hasSelectedDate else { return }
         let signature = currentSignature
         guard signature != baselineSignature else { return }
         autoSaveWorkItem?.cancel()
@@ -560,6 +584,11 @@ struct EntryView: View {
     }
 
     private func submitTapped() {
+        guard hasSelectedDate else {
+            activeAlert = .error("请先选择账单日期。")
+            return
+        }
+
         let candidate = rows.map { row in
             var copy = row
             copy.customer = copy.customer.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -604,7 +633,7 @@ struct EntryView: View {
             _ = try store.submitBill(date: billDate, rows: rows)
             autoSaveWorkItem?.cancel()
             didFinish = true
-            activeAlert = .submitted
+            onClose()
         } catch {
             activeAlert = .error(error.localizedDescription)
         }
@@ -628,14 +657,12 @@ private enum EntryAlert: Identifiable {
     case discard
     case overwrite
     case error(String)
-    case submitted
 
     var id: String {
         switch self {
         case .discard: return "discard"
         case .overwrite: return "overwrite"
         case .error(let message): return "error-\(message)"
-        case .submitted: return "submitted"
         }
     }
 }
@@ -747,6 +774,7 @@ private struct ModelAutocompleteField: View {
 private struct BillDatePickerSheet: View {
     @Binding var date: Date
     let maximumDate: Date
+    let onComplete: () -> Void
     @Environment(\.presentationMode) private var presentationMode
 
     var body: some View {
@@ -762,6 +790,7 @@ private struct BillDatePickerSheet: View {
                 }
                 Spacer()
                 Button("完成") {
+                    onComplete()
                     presentationMode.wrappedValue.dismiss()
                 }
                 .font(.system(size: 14, weight: .semibold))

@@ -22,31 +22,37 @@ struct DirectoryView: View {
     }
 
     var body: some View {
-        WorkshopShell {
-            WorkshopTopBar(
-                brandTitle: "设置管理",
-                brandSubtitle: "Local Settings",
-                brandIcon: "gearshape",
-                backAction: onClose
-            ) {
-                LocalModeBadge(text: "本地单机")
+        ZStack {
+            WorkshopShell {
+                WorkshopTopBar(
+                    brandTitle: "设置管理",
+                    brandSubtitle: "Local Settings",
+                    brandIcon: "gearshape",
+                    backAction: onClose
+                ) {
+                    LocalModeBadge(text: "本地单机")
+                }
+
+                ScrollView {
+                    VStack(spacing: 0) {
+                        PageHeading(
+                            eyebrow: "基础档案",
+                            title: "设置管理",
+                            note: "客户与员工档案仅保存在当前设备，并作为录入页下拉选项使用。"
+                        ) {
+                            PageScopeBadge(label: "本期仅配置", value: "客户 · 员工")
+                        }
+
+                        settingsCard
+                    }
+                    .padding(.horizontal, 38)
+                    .padding(.top, 30)
+                    .padding(.bottom, 34)
+                }
             }
 
-            ScrollView {
-                VStack(spacing: 0) {
-                    PageHeading(
-                        eyebrow: "基础档案",
-                        title: "设置管理",
-                        note: "客户与员工档案仅保存在当前设备，并作为录入页下拉选项使用。"
-                    ) {
-                        PageScopeBadge(label: "本期仅配置", value: "客户 · 员工")
-                    }
-
-                    settingsCard
-                }
-                .padding(.horizontal, 38)
-                .padding(.top, 30)
-                .padding(.bottom, 34)
+            if let target = deleteTarget {
+                deleteConfirmation(target)
             }
         }
         .sheet(item: $activeSheet) { item in
@@ -63,16 +69,68 @@ struct DirectoryView: View {
                 DirectoryDetailSheet(kind: kind, member: member)
             }
         }
-        .alert(item: $deleteTarget) { target in
-            Alert(
-                title: Text("确认删除\(target.kind.singular)？"),
-                message: Text("删除后，该档案将不再出现在录入页下拉选项中。已有流水中的名称不会被改动。"),
-                primaryButton: .destructive(Text("确认删除")) {
-                    delete(target)
-                },
-                secondaryButton: .cancel(Text("取消"))
+    }
+
+    private func deleteConfirmation(_ target: DirectoryDeleteTarget) -> some View {
+        ZStack {
+            Color.black.opacity(0.28)
+                .ignoresSafeArea()
+                .onTapGesture { deleteTarget = nil }
+
+            VStack(alignment: .leading, spacing: 18) {
+                HStack(spacing: 13) {
+                    Image(systemName: "trash")
+                        .font(.system(size: 18, weight: .semibold))
+                        .foregroundColor(AppTheme.danger)
+                        .frame(width: 44, height: 44)
+                        .background(AppTheme.dangerSoft)
+                        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text("确认删除\(target.kind.singular)？")
+                            .font(.system(size: 19, weight: .bold))
+                            .foregroundColor(AppTheme.text)
+                        Text("档案删除后不能撤销。")
+                            .font(.system(size: 12))
+                            .foregroundColor(AppTheme.textMuted)
+                    }
+                }
+
+                Text("删除后，该档案将不再出现在录入页下拉选项中。已有流水中的名称不会被改动。")
+                    .font(.system(size: 14))
+                    .foregroundColor(AppTheme.textMuted)
+                    .lineSpacing(3)
+
+                HStack(spacing: 12) {
+                    Spacer()
+                    Button("取消") { deleteTarget = nil }
+                        .buttonStyle(SecondaryButtonStyle())
+                    Button {
+                        delete(target)
+                        deleteTarget = nil
+                    } label: {
+                        Text("确认删除")
+                            .font(.system(size: 14, weight: .semibold))
+                            .foregroundColor(.white)
+                            .padding(.horizontal, 18)
+                            .frame(height: 40)
+                            .background(AppTheme.danger)
+                            .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                    }
+                    .buttonStyle(PlainButtonStyle())
+                }
+            }
+            .padding(24)
+            .frame(maxWidth: 470)
+            .background(Color.white)
+            .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: 18, style: .continuous)
+                    .stroke(AppTheme.line, lineWidth: 1)
             )
+            .shadow(color: AppTheme.navy.opacity(0.18), radius: 24, x: 0, y: 12)
+            .padding(30)
         }
+        .zIndex(20)
     }
 
     private var settingsCard: some View {
@@ -276,6 +334,7 @@ struct DirectoryView: View {
                         .stroke(AppTheme.line, lineWidth: 1)
                 )
         }
+        .contentShape(Rectangle())
         .buttonStyle(PlainButtonStyle())
     }
 
