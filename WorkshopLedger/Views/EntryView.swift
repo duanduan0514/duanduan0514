@@ -113,7 +113,6 @@ struct EntryView: View {
                         Text("账单日期")
                             .font(.system(size: 11, weight: .bold))
                             .foregroundColor(AppTheme.textFaint)
-                            .kerning(0.8)
                         Spacer(minLength: 8)
                         Text("点击可更改")
                             .font(.system(size: 11, weight: .semibold))

@@ -172,7 +172,6 @@ struct WorkshopTopBar<Trailing: View>: View {
                     Text(brandSubtitle.uppercased())
                         .font(.system(size: 10, weight: .semibold))
                         .foregroundColor(Color(red: 0.60, green: 0.64, blue: 0.71))
-                        .kerning(1.2)
                 }
             }
             .fixedSize()
@@ -251,7 +250,6 @@ struct PageEyebrow: View {
             Text(text)
                 .font(.system(size: 12, weight: .bold))
                 .foregroundColor(AppTheme.accentDark)
-                .kerning(1.2)
         }
     }
 }
@@ -277,7 +275,6 @@ struct PageHeading<Trailing: View>: View {
                 Text(title)
                     .font(.system(size: 30, weight: .bold, design: .rounded))
                     .foregroundColor(AppTheme.text)
-                    .kerning(-0.4)
                 Text(note)
                     .font(.system(size: 14))
                     .foregroundColor(AppTheme.textMuted)
@@ -300,7 +297,6 @@ struct PageScopeBadge: View {
             Text(label)
                 .font(.system(size: 11, weight: .bold))
                 .foregroundColor(AppTheme.textFaint)
-                .kerning(0.8)
             Text(value)
                 .font(.system(size: 15, weight: .bold))
                 .foregroundColor(AppTheme.text)
