@@ -172,7 +172,7 @@ struct WorkshopTopBar<Trailing: View>: View {
                     Text(brandSubtitle.uppercased())
                         .font(.system(size: 10, weight: .semibold))
                         .foregroundColor(Color(red: 0.60, green: 0.64, blue: 0.71))
-                        .tracking(1.2)
+                        .kerning(1.2)
                 }
             }
             .fixedSize()
@@ -251,7 +251,7 @@ struct PageEyebrow: View {
             Text(text)
                 .font(.system(size: 12, weight: .bold))
                 .foregroundColor(AppTheme.accentDark)
-                .tracking(1.2)
+                .kerning(1.2)
         }
     }
 }
@@ -277,7 +277,7 @@ struct PageHeading<Trailing: View>: View {
                 Text(title)
                     .font(.system(size: 30, weight: .bold, design: .rounded))
                     .foregroundColor(AppTheme.text)
-                    .tracking(-0.4)
+                    .kerning(-0.4)
                 Text(note)
                     .font(.system(size: 14))
                     .foregroundColor(AppTheme.textMuted)
@@ -300,7 +300,7 @@ struct PageScopeBadge: View {
             Text(label)
                 .font(.system(size: 11, weight: .bold))
                 .foregroundColor(AppTheme.textFaint)
-                .tracking(0.8)
+                .kerning(0.8)
             Text(value)
                 .font(.system(size: 15, weight: .bold))
                 .foregroundColor(AppTheme.text)
@@ -313,5 +313,21 @@ struct PageScopeBadge: View {
             RoundedRectangle(cornerRadius: 13, style: .continuous)
                 .stroke(AppTheme.line, lineWidth: 1)
         )
+    }
+}
+struct StatusTag: View {
+    let text: String
+    let foreground: Color
+    let background: Color
+
+    var body: some View {
+        Text(text)
+            .font(.system(size: 11, weight: .semibold))
+            .foregroundColor(foreground)
+            .padding(.horizontal, 9)
+            .padding(.vertical, 4)
+            .background(background)
+            .clipShape(Capsule())
+            .overlay(Capsule().stroke(foreground.opacity(0.18), lineWidth: 1))
     }
 }

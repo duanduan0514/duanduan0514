@@ -94,7 +94,7 @@ struct HomeView: View {
             }
             .font(.system(size: 12, weight: .bold))
             .foregroundColor(AppTheme.textFaint)
-            .tracking(0.6)
+            .kerning(0.6)
             .padding(.horizontal, 22)
             .frame(height: 45)
             .background(Color(red: 0.98, green: 0.984, blue: 0.988))

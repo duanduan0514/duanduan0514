@@ -163,7 +163,7 @@ extension Array where Element == EntryRow {
             copy.employee = copy.employee.trimmingCharacters(in: .whitespacesAndNewlines)
             copy.model = copy.model.trimmingCharacters(in: .whitespacesAndNewlines)
             copy.quantity = copy.quantity.trimmingCharacters(in: .whitespacesAndNewlines)
-            copy.colorCount = min(5, max(1, copy.colorCount))
+            copy.colorCount = Swift.min(5, Swift.max(1, copy.colorCount))
             return copy
         }
         .filter { !$0.isCompletelyEmpty }
